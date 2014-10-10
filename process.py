@@ -6,9 +6,12 @@ class pcb(object):
 
 	def __init__(self, pid):
 		self.pid = pid
+		self.file = "null"
 		self.r = False
 		self.lenw = 0
 		self.mem = 0
+	def setFile(self,file):
+		self.file = file
 	def setR(self, r):
 		self.r = r
 	def setLenw(self, len):
@@ -16,10 +19,10 @@ class pcb(object):
 	def setMem(self, mem):
 		self.mem = mem
 
-# Device object. Usese python deque and can be one of three types. Type really does not matter 
+# Device object. Usese python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
 class device(object):
-	# printer, disk, CD/RW 
+	# printer, disk, CD/RW
 	# read / write
 
 	def __init__(self, name):
@@ -48,7 +51,7 @@ class cpu(object):
 			for i in range(int(numDevices[d])):
 				newDevice = device(d+str(i+1))
 				self.devices.append(newDevice)
-		
+
 	# checks device list for a deviceName (p1,d3,rw123132...)
 	def findDevice(self,deviceName):
 		for d in self.devices:
@@ -61,10 +64,10 @@ class cpu(object):
 		self.runningPCB = 0
 		self.setPCB()
 
-	# PIDs must be unique (somewhat) so I'm doing a very simple map/hash 
+	# PIDs must be unique (somewhat) so I'm doing a very simple map/hash
 	def pidAssign(self):
 		return randrange(self.qSize()+1) % 32
-	# sets the PCB to whatever is at the front of the queue. 
+	# sets the PCB to whatever is at the front of the queue.
 	def setPCB(self):
 			self.runningPCB = self.popFront()
 	def qSize(self):
@@ -87,4 +90,3 @@ class cpu(object):
 		if(self.runningPCB == 0):
 			self.setPCB()
 		return self.runningPCB
-
