@@ -47,23 +47,30 @@ def handleInput(command,cpu):
 		currentPCB = cpu.runningPCB
 		# check we have a running process
 		try:
-			print currentPCB.pid
+			currentPCB.pid
 		except AttributeError:
 			print "No process in CPU"
+			return 0
 		# check if device exists
 		if(not cpu.findDevice(command.lower())):
 			print "Device not found"
+			return 0
 		else:
-			paraCommand = raw_input("Enter filename, r, w, or memory\n")
+			paraCommand = raw_input("Enter filename, r, w, or memory: ")
 			if not genIntCheck([paraCommand]):
-				print "memory"
+				currentPCB.setMem(paraCommand)
+				para2 = raw_input("Memorys length: ")
+				if not genIntCheck([para2]):
+					currentPCB.setLenw(para2)
+				else:
+					print "Incorrect, please use base 10 integer"
 			elif paraCommand == 'w':
-				print "write"
+				currentPCB.setR(False)
 			elif paraCommand == 'r':
-				print "read"
+				currentPCB.setR(True)
 			else:
-				print "filename"
-
+				currentPCB.setFile(paraCommand)
+			cpu.getDevice(command.lower()).push(currentPCB)
 		# handle more input (check for P D RW vs p d rw)
 		# memory (int) , 'r', 'w', how long 'w' is. Printer only takes 'w'
 
@@ -92,7 +99,7 @@ def snapshot(cpu):
 	if sPara == 'r':
 		print "r"
 	elif sPara == 'p':
-		# snapshotOutput( cpu.getDeviceType(devicePrefix) )
+		snapshotOutput( cpu.getDeviceType("p") )
 	elif sPara == 'd':
 		print "d"
 	elif sPara == 'c':
@@ -111,10 +118,12 @@ def snapshot(cpu):
 
 def snapshotOutput(device):
 
-		print '{:4s} {:20s} {:10s} {:5s} {:6s} {:7s}'.format('PID','Filename','Memstart','R/W','File','Length')
-		# for device
-			# for pcb in device
-				# print info
+		print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format('PID','Filename','Memstart','R/W','File','Length')
+		for d in device:
+			print '--- {:3s}\n'.format(d.name)
+			for pcb in d.queue:
+				print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), pcb.file, str(pcb.lenw))
+
 
 
 

@@ -18,6 +18,8 @@ class pcb(object):
 		self.lenw = len
 	def setMem(self, mem):
 		self.mem = mem
+	def RW(self):
+		return "r" if self.r else "w"
 
 # Device object. Usese python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
@@ -52,6 +54,10 @@ class cpu(object):
 				newDevice = device(d+str(i+1))
 				self.devices.append(newDevice)
 
+	def getDeviceType(self,device):
+		return self.devices
+	def getDevice(self, device):
+		return self.devices[1]
 	# checks device list for a deviceName (p1,d3,rw123132...)
 	def findDevice(self,deviceName):
 		for d in self.devices:
