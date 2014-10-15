@@ -36,9 +36,13 @@ class device(object):
 		return self.queue.popleft()
 	def push(self,x):
 		return self.queue.append(x)
-	# communicates with cpu somehow but perhaps I won't even need this
-	def sendInterupt():
-		pass
+	# signals the completion of the task in this devices queue
+	def terminate(self):
+		try:
+			return self.queue.pop()
+		except IndexError:
+			print "Device is empty"
+			return 0
 
 
 # cpu object. Where all the fun is.
@@ -49,15 +53,25 @@ class cpu(object):
 		self.queue = deque()
 		self.runningPCB = 0
 		self.devices = []
+		self.qSize = 1
 		for d in numDevices:
 			for i in range(int(numDevices[d])):
 				newDevice = device(d+str(i+1))
 				self.devices.append(newDevice)
 
+	def getQueue(self):
+		return self.queue
 	def getDeviceType(self,device):
-		return self.devices
+		devices = []
+		for d in self.devices:
+			if d.name[0] == device:
+				devices.append(d)
+		return devices
 	def getDevice(self, device):
-		return self.devices[1]
+		for d in self.devices:
+			if d.name == device :
+				return d
+
 	# checks device list for a deviceName (p1,d3,rw123132...)
 	def findDevice(self,deviceName):
 		for d in self.devices:
@@ -72,12 +86,11 @@ class cpu(object):
 
 	# PIDs must be unique (somewhat) so I'm doing a very simple map/hash
 	def pidAssign(self):
-		return randrange(self.qSize()+1) % 32
+		return self.qSize
 	# sets the PCB to whatever is at the front of the queue.
 	def setPCB(self):
 			self.runningPCB = self.popFront()
-	def qSize(self):
-		return len(self.queue)
+
 	def peek(self):
 		try:
 			return self.queue[0]
@@ -92,6 +105,7 @@ class cpu(object):
 			return 0
 	# add to back of the queue
 	def push(self,x):
+		self.qSize = self.qSize+1
 		self.queue.append(x)
 		if(self.runningPCB == 0):
 			self.setPCB()

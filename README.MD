@@ -3,25 +3,15 @@ ASSIGNMENT ONE
 DUE OCTOBER 16TH
 
 
-Two stages of operation :
-x	sysgen:
-x		how many devices (printer, disk, cd/rw)
-	running
+PROGRAMMED IN PYTHON VERSION 2.7.6
+(Works with 2.7.5 which we use in eniac)
 
-	system events:
+Assuming process.py is the same directory. 
+Run with any of these:
+	python main.py
+	sudo python main.py
+	python2.7 main.py
+	sudo python2.7 main.py
 
-X	FIFO q
 
-	commands
-
-X		A-arrival of process
-x			  NEW PCB
-x		t - terminate process in cpu
-x		p#, d#, r#, w#, 
-		mem, r/w, len(w)
-		S - snapshot
-		  r - read cpu queue
-		  p - printer
-		  d - driver
-		  c - rw
-		  
+Upon running your system may or may not create a process.pyc file.

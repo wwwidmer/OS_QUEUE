@@ -7,9 +7,9 @@ def sysgen():
 	print("SYSGEN")
 	deviceGen = True
 	while(deviceGen):
-		numprint=raw_input("How many printers are connected to the system?\n")
-		numdisk=raw_input("How many disks are connected to the system?\n")
-		numrw=raw_input("How many CD/RW are connected to the system?\n")
+		numprint=raw_input("How many printers are connected to the system?: ")
+		numdisk=raw_input("How many disks are connected to the system?: ")
+		numrw=raw_input("How many CD/RW are connected to the system?: ")
 		deviceGen = genIntCheck([numprint, numdisk, numrw])
 		if(deviceGen):
 			print "Please reenter all values as base 10 Integers"
@@ -34,14 +34,15 @@ def running(cpu):
 	running = True
 	print("Running")
 	while(running):
-		command = raw_input("Enter a command:\n")
+		command = raw_input("Enter a command: ")
 		handleInput(command,cpu)
 
 # check for regular expression of commands that can be variable (p1, w1, etc)
 # or commands mapped to functions that are essentially static (t, A, S)
 def handleInput(command,cpu):
-	known_commands = {"A":processArrival, "S":snapshot, "KILLALL":exit, "exit":exit, "t":terminate}
-	regCommands = re.match(r'^(?P<device>p|d|rw|P|D|RW)(?P<number>[0-9]+)$', command)
+	known_commands = {"A":processArrival, "S":snapshot, "t":terminate}
+	regCommands = re.match(r'^(?P<device>p|d|rw)(?P<number>[0-9]+)$', command)
+	termCommands = re.match(r'^(?P<device>P|D|RW)(?P<number>[0-9]+)$', command)
 	if(regCommands):
 		regCommands.groupdict()
 		currentPCB = cpu.runningPCB
@@ -56,24 +57,29 @@ def handleInput(command,cpu):
 			print "Device not found"
 			return 0
 		else:
-			paraCommand = raw_input("Enter filename, r, w, or memory: ")
-			if not genIntCheck([paraCommand]):
-				currentPCB.setMem(paraCommand)
-				para2 = raw_input("Memorys length: ")
-				if not genIntCheck([para2]):
-					currentPCB.setLenw(para2)
-				else:
-					print "Incorrect, please use base 10 integer"
-			elif paraCommand == 'w':
-				currentPCB.setR(False)
-			elif paraCommand == 'r':
-				currentPCB.setR(True)
+			paraFile = raw_input("Enter filename: ")
+			currentPCB.setFile(paraFile)
+			paraMem = raw_input("Enter memory starting location(int): ")
+			currentPCB.setMem(paraMem)
+			para2 = raw_input("Memory length: ")
+			if not genIntCheck([para2]):
+				currentPCB.setLenw(para2)
 			else:
-				currentPCB.setFile(paraCommand)
-			cpu.getDevice(command.lower()).push(currentPCB)
-		# handle more input (check for P D RW vs p d rw)
-		# memory (int) , 'r', 'w', how long 'w' is. Printer only takes 'w'
+				print "Incorrect, please use base 10 integer"
+			if not command.lower()[0] == 'p':
+				setRead = raw_input("Read or Write: ")
+				if setRead == 'r':
+					currentPCB.setR == True
+				elif setRead =='w':
+					currentPCB.setR == False
+				else:
+					print "Unknown command\n"
 
+			cpu.getDevice(command.lower()).push(currentPCB)
+
+	elif (termCommands):
+		cpu.getDevice(command.lower()).terminate()
+		# getDevice, Terminate on Device
 	else:
 		try:
 			if(known_commands[command]):
@@ -94,18 +100,19 @@ def terminate(cpu):
 
 # 'S'
 def snapshot(cpu):
-	sPara = raw_input("Enter r, p, d, or c\n")
+	sPara = raw_input("Enter r, p, d, or c: ")
 
 	if sPara == 'r':
-		print "r"
+		print 'Ready Queue'
+		snapshotReadyQueue( cpu.getQueue() )
 	elif sPara == 'p':
 		snapshotOutput( cpu.getDeviceType("p") )
 	elif sPara == 'd':
-		print "d"
+		snapshotOutput( cpu.getDeviceType("d") )
 	elif sPara == 'c':
-		print "c"
+		snapshotOutput( cpu.getDeviceType("r") )
 	else:
-		print "Unknown Command"
+		print "Unknown Command\n"
 
 	#r
 	# show the PIDs of the proceses in the REady Q
@@ -116,13 +123,18 @@ def snapshot(cpu):
 	#c
 	# CD/RW queues
 
-def snapshotOutput(device):
+def snapshotReadyQueue(queue):
+	print '{:4s} \n'.format('PID')
+	for pcb in queue:
+		print '{:4s} '.format(str(pcb.pid))
 
-		print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format('PID','Filename','Memstart','R/W','File','Length')
-		for d in device:
-			print '--- {:3s}\n'.format(d.name)
-			for pcb in d.queue:
-				print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), pcb.file, str(pcb.lenw))
+
+def snapshotOutput(device):
+	print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format('PID','Filename','Memstart','R/W','File','Length')
+	for d in device:
+		print '--- {:3s}\n'.format(d.name)
+		for pcb in d.queue:
+			print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), pcb.file, str(pcb.lenw))
 
 
 
