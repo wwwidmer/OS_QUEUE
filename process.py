@@ -53,7 +53,7 @@ class cpu(object):
 		self.queue = deque()
 		self.runningPCB = 0
 		self.devices = []
-		self.qSize = 1
+		self.qSize = 0
 		for d in numDevices:
 			for i in range(int(numDevices[d])):
 				newDevice = device(d+str(i+1))

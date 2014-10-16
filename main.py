@@ -1,5 +1,5 @@
 from process import pcb, device, cpu
-import re
+import re, copy
 
 
 # system generation function.
@@ -45,7 +45,7 @@ def handleInput(command,cpu):
 	termCommands = re.match(r'^(?P<device>P|D|RW)(?P<number>[0-9]+)$', command)
 	if(regCommands):
 		regCommands.groupdict()
-		currentPCB = cpu.runningPCB
+		currentPCB = copy.copy(cpu.runningPCB)
 		# check we have a running process
 		try:
 			currentPCB.pid
@@ -134,7 +134,7 @@ def snapshotOutput(device):
 	for d in device:
 		print '--- {:3s}\n'.format(d.name)
 		for pcb in d.queue:
-			print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), pcb.file, str(pcb.lenw))
+			print '{:4s} {:20s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), str(pcb.mem), str(pcb.lenw))
 
 
 
