@@ -59,13 +59,7 @@ def handleInput(command,cpu):
 		else:
 			paraFile = raw_input("Enter filename: ")
 			currentPCB.setFile(paraFile)
-			paraMem = raw_input("Enter memory starting location(int): ")
-			currentPCB.setMem(paraMem)
-			para2 = raw_input("Memory length: ")
-			if not genIntCheck([para2]):
-				currentPCB.setLenw(para2)
-			else:
-				print "Incorrect, please use base 10 integer"
+			setRead = 'w'
 			if not command.lower()[0] == 'p':
 				setRead = raw_input("Read or Write: ")
 				if setRead == 'r':
@@ -74,11 +68,21 @@ def handleInput(command,cpu):
 					currentPCB.setR == False
 				else:
 					print "Unknown command\n"
+					return 0
+			paraMem = raw_input("Enter memory starting location(int): ")
+			currentPCB.setMem(paraMem)
+			if(setRead == 'w'):
+				para2 = raw_input("Memory length: ")
+				if not genIntCheck([para2]):
+					currentPCB.setLenw(para2)
+				else:
+					print "Incorrect, please use base 10 integer"
+					return  0
 
 			cpu.getDevice(command.lower()).push(currentPCB)
-
+			cpu.setPCB()
 	elif (termCommands):
-		cpu.getDevice(command.lower()).terminate()
+		cpu.push(cpu.getDevice(command.lower()).terminate())
 		# getDevice, Terminate on Device
 	else:
 		try:
@@ -103,7 +107,7 @@ def snapshot(cpu):
 	sPara = raw_input("Enter r, p, d, or c: ")
 
 	if sPara == 'r':
-		print 'Ready Queue'
+		print 'Ready Queue (Excluding process currently in CPU)\n'
 		snapshotReadyQueue( cpu.getQueue() )
 	elif sPara == 'p':
 		snapshotOutput( cpu.getDeviceType("p") )

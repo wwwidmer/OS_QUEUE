@@ -39,7 +39,7 @@ class device(object):
 	# signals the completion of the task in this devices queue
 	def terminate(self):
 		try:
-			return self.queue.pop()
+			return self.queue.popleft)
 		except IndexError:
 			print "Device is empty"
 			return 0
