@@ -3,14 +3,39 @@ import re, copy
 
 
 # system generation function.
+# todo
+# round robin for ready queue
+# cpu usage accounting
+
+# sysgen :
+# length ( milliseconds ) of a time slice
+
+# cyclinder length ( int ) for each disk
+
+# "T" process goes to back of ready queue
+
+# syscall -> ask for how long current process was in cpu
+# disk read or write prompt for cylinder to access
+# disk queue scheduling algorithm
+# S r c d p -> display but with total time each process in queue has used cpu
+# ^ average burst time
+# systems average cpu time of completed process
+# when process terminates its pid and cpu time are reported to the accounting module, update average cpu time
+
+
+
+
 def sysgen():
 	print("SYSGEN")
 	deviceGen = True
-	while(deviceGen):
+	diskGen = False
+	while(deviceGen or diskGen):
 		numprint=raw_input("How many printers are connected to the system?: ")
 		numdisk=raw_input("How many disks are connected to the system?: ")
 		numrw=raw_input("How many CD/RW are connected to the system?: ")
-		deviceGen = genIntCheck([numprint, numdisk, numrw])
+		numslice=raw_input("How many milliseconds are in a time slice?: ")
+		deviceGen = genIntCheck([numprint, numdisk, numrw, numslice])
+		# cylinder length for each disk
 		if(deviceGen):
 			print "Please reenter all values as base 10 Integers"
 
@@ -40,7 +65,7 @@ def running(cpu):
 # check for regular expression of commands that can be variable (p1, w1, etc)
 # or commands mapped to functions that are essentially static (t, A, S)
 def handleInput(command,cpu):
-	known_commands = {"A":processArrival, "S":snapshot, "t":terminate}
+	known_commands = {"A":processArrival, "S":snapshot, "t":terminate, "T":backtoQueue}
 	regCommands = re.match(r'^(?P<device>p|d|rw)(?P<number>[0-9]+)$', command)
 	termCommands = re.match(r'^(?P<device>P|D|RW)(?P<number>[0-9]+)$', command)
 	if(regCommands):
@@ -91,6 +116,9 @@ def handleInput(command,cpu):
 		except KeyError as k:
 			print "Unknown Command. Try again"
 
+# 'T'
+def backtoQueue(cpu):
+	pass
 
 # 'A'
 def processArrival(cpu):

@@ -10,6 +10,9 @@ class pcb(object):
 		self.r = False
 		self.lenw = 0
 		self.mem = 0
+		self.curTime = 0
+		self.avgTime = 0
+
 	def setFile(self,file):
 		self.file = file
 	def setR(self, r):
@@ -39,7 +42,7 @@ class device(object):
 	# signals the completion of the task in this devices queue
 	def terminate(self):
 		try:
-			return self.queue.popleft)
+			return self.queue.popleft()
 		except IndexError:
 			print "Device is empty"
 			return 0
@@ -54,6 +57,8 @@ class cpu(object):
 		self.runningPCB = 0
 		self.devices = []
 		self.qSize = 0
+		self.avgTime = 0
+		
 		for d in numDevices:
 			for i in range(int(numDevices[d])):
 				newDevice = device(d+str(i+1))
