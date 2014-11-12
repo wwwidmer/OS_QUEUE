@@ -1,5 +1,6 @@
 from collections import deque
 from random import randrange
+import re, copy
 
 # process object with all essential information. Setters mostly. Nothing complicated.
 class pcb(object):
@@ -10,8 +11,8 @@ class pcb(object):
 		self.r = False
 		self.lenw = 0
 		self.mem = 0
-		self.curTime = 0
-		self.avgTime = 0
+		self.totalTime = 0
+		self.cylinder = 0
 
 	def setFile(self,file):
 		self.file = file
@@ -28,12 +29,28 @@ class pcb(object):
 # other than printers can only write.
 class device(object):
 	# printer, disk, CD/RW
-	# read / write
 
 	def __init__(self, name):
 		self.name = name
 		self.queue = deque()
+		self.averageBurst = 0
+		self.totalTime = 0
+		self.completed = 0
+		self.cylinders = 0
 
+	def updateAverage(self):
+		self.averageBurst = (self.totalTime / self.completed)
+
+	def updateTotal(self,x):
+		self.completed += 1
+		self.totalTime += x
+
+	def schedule(self):
+		# if disk queue do sched
+		pass
+
+	def cscanSchedule(self):
+		pass
 	# wrapper methods for the queue
 	def popFront(self):
 		return self.queue.popleft()
@@ -46,23 +63,34 @@ class device(object):
 		except IndexError:
 			print "Device is empty"
 			return 0
-
+	def checkCylinder(self, x):
+		if int(x) > self.cylinders:
+			return False
+		else:
+			return True
 
 # cpu object. Where all the fun is.
 class cpu(object):
 
 	# create the queue, set the current process to 0 (null), and configure devices attached (as parameter)
-	def __init__(self, numDevices):
+	def __init__(self, devices):
 		self.queue = deque()
 		self.runningPCB = 0
 		self.devices = []
 		self.qSize = 0
 		self.avgTime = 0
-		
-		for d in numDevices:
-			for i in range(int(numDevices[d])):
-				newDevice = device(d+str(i+1))
-				self.devices.append(newDevice)
+		self.timeSlice = int(devices['slice'])
+		# 	return {"p":numprint,"d":numdisk,"rw":numrw,"slice":tSlice,"diskCyl":diskCyl}
+		for d in range(int(devices['p'])):
+			newDevice = device('p'+str(d+1))
+			self.devices.append(newDevice)
+		for d in range(int(devices['d'])):
+			newDevice = device('d'+str(d+1))
+			newDevice.cylinders = devices['diskCyl'][d+1]
+			self.devices.append(newDevice)
+		for d in range(int(devices['rw'])):
+			newDevice = device('rw'+str(d+1))
+			self.devices.append(newDevice)
 
 	def getQueue(self):
 		return self.queue
@@ -86,8 +114,10 @@ class cpu(object):
 
 	# We've already popFront at this point, so we set what is currently running to 0
 	def terminate(self):
+		old = copy.copy(self.runningPCB)
 		self.runningPCB = 0
 		self.setPCB()
+		return old
 
 	# PIDs must be unique (somewhat) so I'm doing a very simple map/hash
 	def pidAssign(self):
@@ -108,6 +138,7 @@ class cpu(object):
 		except IndexError:
 			print("Nothing in the CPU")
 			return 0
+
 	# add to back of the queue
 	def push(self,x):
 		self.qSize = self.qSize+1
@@ -115,3 +146,7 @@ class cpu(object):
 		if(self.runningPCB == 0):
 			self.setPCB()
 		return self.runningPCB
+
+	# round robin, if cur time slice is taken up, place process into back of queue
+	def schedule(self):
+		pass
