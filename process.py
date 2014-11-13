@@ -44,7 +44,7 @@ class device(object):
 		self.averageBurst = 0.0
 		self.totalTime = 0
 		self.completed = 0
-		self.cylinders = 0
+		self.cylinders = 1
 		self.cur_cylinder = 1
 
 
@@ -62,18 +62,27 @@ class device(object):
 				dequeuer.append(self.queue_buffer.popleft())
 		except IndexError:
 			pass
+		dequeuer.reverse()
 		while len(dequeuer) >= 1:
+			self.curReset()
 			if self.cur_cylinder <= self.cylinders:
+				boolC = True
 				for x in dequeuer:
-					if x.cylinder == self.cur_cylinder:
+					if int(x.cylinder) == int(self.cur_cylinder):	
 						de = dequeuer.pop(dequeuer.index(x))
 						self.queue.append(de)
-				self.cur_cylinder += 1
-			if(self.cur_cylinder == self.cylinders or self.cur_cylinder > self.cylinders):
-				self.cur_cylinder = 1
+						boolC = False
+				if(boolC):
+					self.cur_cylinder += 1
+			self.curReset()
+
+	def curReset(self):
+		if int(self.cur_cylinder) > int(self.cylinders):
+			print "RESET"
+			self.cur_cylinder = 1
 
 
-	def cscanSchdule2(self):
+	def cscanSchedule2(self):
 		# thread timer, awake every 4 seconds
 		# get cur_cylinder
 		# compare to everything in queue_buffer

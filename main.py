@@ -107,7 +107,7 @@ def handleInput(command,cpu):
 					print "Unknown command\n"
 					return 0
 			paraMem = raw_input("Enter memory starting location(int): ")
-			if(genIntCheck[(paraMem)]):
+			if(genIntCheck([paraMem])):
 				currentPCB.setMem(paraMem)
 			else:
 				print "Please use base 10 integer"
@@ -152,7 +152,13 @@ def handleInput(command,cpu):
 			cpu.getDevice(command.lower()).push(currentPCB)
 			cpu.setPCB()
 	elif (termCommands):
-		cpu.push(cpu.getDevice(command.lower()).terminate())
+		processBackToCpu = cpu.getDevice(command.lower()).terminate()
+		if(processBackToCpu == 0):
+			print "There was an error and it was not handled"
+			print "From my tests this means a process was sent to Disk"
+			print "But was not scheduled"
+		else:
+			cpu.push(processBackToCpu)
 		# getDevice, Terminate on Device
 	else:
 		try:

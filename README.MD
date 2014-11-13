@@ -24,19 +24,10 @@ todo
 General
 - Lots of trapping, hopefully commented as needed
 - Cleaning up the code
+^ probably not for deadline
 
 Programming
 - Add scheduling
 	disk
 
-- cpu usage accounting
-
-- "S" r c d p
-	total time for each pcb	X
-	pcb average burst time	X
-	systems average CPU time of completed process	X
-- "t" -> PRINT PID TOTAL CPU TIME, update average CPU time X
-
-
-
-- Disk Queue
+- cpu usage accounting X
