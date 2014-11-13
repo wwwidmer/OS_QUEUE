@@ -3,7 +3,7 @@ import re, copy
 
 
 # system generation function.
-# todo
+# todorpr
 # round robin for ready queue
 # cpu usage accounting
 
@@ -139,10 +139,10 @@ def handleInput(command,cpu):
 				timerInt = genIntCheck([timerPrompt])
 				if not timerInt:
 					print "Incorrect, please use base 10 integer"
-				if int(timerPrompt) > cpu.timeSlice:
+				elif int(timerPrompt) > cpu.timeSlice:
 					print "Timer is larger than a time slice, try again"
 					timerInt = False
-				if int(timerPrompt) < 0:
+				elif int(timerPrompt) < 0:
 					print "Timer should be non-negative base 10 integer"
 					timerInt = False
 
