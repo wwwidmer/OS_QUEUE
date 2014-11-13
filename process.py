@@ -68,7 +68,7 @@ class device(object):
 			if self.cur_cylinder <= self.cylinders:
 				boolC = True
 				for x in dequeuer:
-					if int(x.cylinder) == int(self.cur_cylinder):	
+					if int(x.cylinder) == int(self.cur_cylinder):
 						de = dequeuer.pop(dequeuer.index(x))
 						self.queue.append(de)
 						boolC = False
@@ -78,7 +78,6 @@ class device(object):
 
 	def curReset(self):
 		if int(self.cur_cylinder) > int(self.cylinders):
-			print "RESET"
 			self.cur_cylinder = 1
 
 
