@@ -1,6 +1,7 @@
 from collections import deque
 from random import randrange
-import re, copy
+import re, copy, time, threading
+
 
 # process object with all essential information. Setters mostly. Nothing complicated.
 class pcb(object):
@@ -12,50 +13,83 @@ class pcb(object):
 		self.lenw = 0
 		self.mem = 0
 		self.totalTime = 0
-		self.cylinder = 0
+		self.cylinder = 1
+		self.averageBurst = 0.0
+		self.completed = 0
+
+	def updateAverage(self):
+		self.averageBurst = float(self.totalTime / self.completed)
 
 	def setFile(self,file):
 		self.file = file
 	def setR(self, r):
 		self.r = r
-	def setLenw(self, len):
-		self.lenw = len
+	def setLenw(self, leng):
+		self.lenw = leng
 	def setMem(self, mem):
 		self.mem = mem
 	def RW(self):
 		return "r" if self.r else "w"
 
-# Device object. Usese python deque and can be one of three types. Type really does not matter
+# Device object. Uses python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
+# and Disks have a scheduler
 class device(object):
 	# printer, disk, CD/RW
 
 	def __init__(self, name):
 		self.name = name
 		self.queue = deque()
-		self.averageBurst = 0
+		self.queue_buffer = deque()
+		self.averageBurst = 0.0
 		self.totalTime = 0
 		self.completed = 0
 		self.cylinders = 0
+		self.cur_cylinder = 1
 
-	def updateAverage(self):
-		self.averageBurst = (self.totalTime / self.completed)
 
 	def updateTotal(self,x):
 		self.completed += 1
 		self.totalTime += x
 
+
+	# DISK SCHEDULER
 	def schedule(self):
-		# if disk queue do sched
+		dequeuer = []
+
+		try:
+			while self.queue_buffer:
+				dequeuer.append(self.queue_buffer.popleft())
+		except IndexError:
+			pass
+		while len(dequeuer) >= 1:
+			if self.cur_cylinder <= self.cylinders:
+				for x in dequeuer:
+					if x.cylinder == self.cur_cylinder:
+						de = dequeuer.pop(dequeuer.index(x))
+						self.queue.append(de)
+				self.cur_cylinder += 1
+			if(self.cur_cylinder == self.cylinders or self.cur_cylinder > self.cylinders):
+				self.cur_cylinder = 1
+
+
+	def cscanSchdule2(self):
+		# thread timer, awake every 4 seconds
+		# get cur_cylinder
+		# compare to everything in queue_buffer
+		# pop from qb into queue is match
+		# back to sleep after checking all qb
 		pass
 
-	def cscanSchedule(self):
-		pass
 	# wrapper methods for the queue
 	def popFront(self):
 		return self.queue.popleft()
 	def push(self,x):
-		return self.queue.append(x)
+		if self.name[0] == 'd':
+			return self.queue_buffer.append(x)
+		else:
+			return self.queue.append(x)
+
 	# signals the completion of the task in this devices queue
 	def terminate(self):
 		try:
@@ -63,6 +97,7 @@ class device(object):
 		except IndexError:
 			print "Device is empty"
 			return 0
+
 	def checkCylinder(self, x):
 		if int(x) > self.cylinders:
 			return False
@@ -78,9 +113,11 @@ class cpu(object):
 		self.runningPCB = 0
 		self.devices = []
 		self.qSize = 0
-		self.avgTime = 0
+		self.avgTime = 0.0
+		self.totalTime = 0
+		self.numComp = 0
 		self.timeSlice = int(devices['slice'])
-		# 	return {"p":numprint,"d":numdisk,"rw":numrw,"slice":tSlice,"diskCyl":diskCyl}
+
 		for d in range(int(devices['p'])):
 			newDevice = device('p'+str(d+1))
 			self.devices.append(newDevice)
@@ -91,6 +128,12 @@ class cpu(object):
 		for d in range(int(devices['rw'])):
 			newDevice = device('rw'+str(d+1))
 			self.devices.append(newDevice)
+
+
+	def updateAverageCPU(self, x):
+		self.numComp += 1
+		self.totalTime += x
+		self.avgTime = float(self.totalTime / self.numComp)
 
 	def getQueue(self):
 		return self.queue
@@ -146,7 +189,3 @@ class cpu(object):
 		if(self.runningPCB == 0):
 			self.setPCB()
 		return self.runningPCB
-
-	# round robin, if cur time slice is taken up, place process into back of queue
-	def schedule(self):
-		pass

@@ -40,9 +40,16 @@ def sysgen():
 			print "Please reenter all values as base 10 Integers"
 		# determine cylinder length for each disk
 	diskCyl = {}
-	for i in range(int(numdisk)):
-		cyl = raw_input("How many cylinders does the "+str(i+1)+"th disk have?: ")
-		diskCyl[i+1] = cyl
+	generatingDisk = True
+	while generatingDisk:
+		for i in range(int(numdisk)):
+			cyl = raw_input("How many cylinders does the "+str(i+1)+"th disk have?: ")
+			diskCyl[i+1] = cyl
+		if genIntCheck(diskCyl.values()):
+			generatingDisk = False
+		else:
+			generatingDisk = True
+			print("Please reenter all values as base 10 Integers")
 
 
 	return {"p":numprint,"d":numdisk,"rw":numrw,"slice":tSlice,"diskCyl":diskCyl}
@@ -100,7 +107,11 @@ def handleInput(command,cpu):
 					print "Unknown command\n"
 					return 0
 			paraMem = raw_input("Enter memory starting location(int): ")
-			currentPCB.setMem(paraMem)
+			if(genIntCheck[(paraMem)]):
+				currentPCB.setMem(paraMem)
+			else:
+				print "Please use base 10 integer"
+				return 0
 			if(setRead == 'w'):
 				para2 = raw_input("Memory length: ")
 				if genIntCheck([para2]):
@@ -121,6 +132,23 @@ def handleInput(command,cpu):
 					print "Please enter an integer."
 					return 0
 			# prompt Timer Here
+			timerInt = False
+			timerPrompt = 0
+			while not timerInt:
+				timerPrompt = raw_input("How long was this process in the CPU before syscall?: ")
+				timerInt = genIntCheck([timerPrompt])
+				if not timerInt:
+					print "Incorrect, please use base 10 integer"
+				if int(timerPrompt) > cpu.timeSlice:
+					print "Timer is larger than a time slice, try again"
+					timerInt = False
+				if int(timerPrompt) < 0:
+					print "Timer should be non-negative base 10 integer"
+					timerInt = False
+
+			currentPCB.totalTime += int(timerPrompt)
+			currentPCB.completed += 1
+			currentPCB.updateAverage()
 			cpu.getDevice(command.lower()).push(currentPCB)
 			cpu.setPCB()
 	elif (termCommands):
@@ -136,9 +164,13 @@ def handleInput(command,cpu):
 # 'T'
 def backtoQueue(cpu):
 	currentPCB = copy.copy(cpu.runningPCB)
-	currentPCB.totalTime += cpu.timeSlice
-	cpu.setPCB()
-	cpu.push(currentPCB)
+	if currentPCB == 0:
+		print "Nothing in CPU"
+		return 0
+	else:
+		currentPCB.totalTime += cpu.timeSlice
+		cpu.setPCB()
+		cpu.push(currentPCB)
 
 # 'A'
 def processArrival(cpu):
@@ -155,11 +187,14 @@ def terminate(cpu):
 	# calculate average time
 	print "{:4s} {:10s}".format("PID", "Total CPU Time")
 	print "{:4s} {:10s}".format(str(old.pid), str(old.totalTime))
+	cpu.updateAverageCPU(old.totalTime)
+	print cpu.avgTime
 
 # 'S'
 def snapshot(cpu):
 	sPara = raw_input("Enter r, p, d, or c: ")
-
+	print "Average CPU time"
+	print cpu.avgTime
 	if sPara == 'r':
 		print 'Ready Queue (First is currently in CPU)\n'
 		snapshotReadyQueue(cpu, cpu.getQueue() )
@@ -195,9 +230,11 @@ def snapshotReadyQueue(cpu,queue):
 def snapshotOutput(device):
 	print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s} {:5s} {:7s}\n'.format('PID','Filename','Memstart','R/W','File','Length','Time', 'AvgBurst')
 	for d in device:
+		if d.name[0] == 'd':
+			d.schedule()
 		print '--- {:3s}\n'.format(d.name)
 		for pcb in d.queue:
-			print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), str(pcb.mem), str(pcb.lenw))
+			print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s} {:5s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(pcb.mem), pcb.RW(), str(pcb.mem), str(pcb.lenw), str(pcb.totalTime), str(pcb.averageBurst))
 
 # Call appropriate functions, generate system, link CPU and devices, run with the one CPU.
 def init():

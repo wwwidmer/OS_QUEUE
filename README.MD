@@ -24,24 +24,18 @@ todo
 General
 - Lots of trapping, hopefully commented as needed
 - Cleaning up the code
-- Make devices more modular
 
 Programming
 - Add scheduling
 	disk
-	robin ready queue 	 X
+
 - cpu usage accounting
 
-- Length of time slice X
-- Cylinders / Disk
-- "T" 								 X
-- System call asking Timer how long a procress was in CPU
-- Syscall for a disk prompts for Cylinder	/
 - "S" r c d p
-	total time for each pc	/
-	pcb average burst time	/
-	systems average CPU time of completed process
-- "t" -> PRINT PID TOTAL CPU TIME, update average CPU time /
+	total time for each pcb	X
+	pcb average burst time	X
+	systems average CPU time of completed process	X
+- "t" -> PRINT PID TOTAL CPU TIME, update average CPU time X
 
 
 
