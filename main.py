@@ -177,8 +177,15 @@ def handleInput(command,cpu):
 #K#
 
 def kill(cpu,pid):
-	cpu.killProcess(pid)
-
+	old = cpu.killProcess(pid)
+	if old == 0:
+		print "PID could not be found"
+		return 0
+	print "{:4s} {:10s}".format("PID","Total CPU Time")
+	print "{:4s} {:10s}".format(str(old.pid),str(old.totalTime))
+	
+	cpu.updateAverageCPU(old.totalTime)
+	print cpu.avgTime
 
 # 'T'
 def backtoQueue(cpu):
@@ -188,6 +195,7 @@ def backtoQueue(cpu):
 		return 0
 	else:
 		currentPCB.totalTime += cpu.timeSlice
+		cpu.addMemory(currentPCB.memSize)
 		cpu.setPCB()
 		cpu.push(currentPCB)
 
@@ -213,7 +221,7 @@ def processArrival(cpu):
 def terminate(cpu):
 	old = cpu.terminate()
 	if old == 0:
-		print "Nothing in CPU"
+		print "There was nothing in the CPU"
 		return 0
 	# calculate average time
 	print "{:4s} {:10s}".format("PID", "Total CPU Time")
@@ -240,14 +248,6 @@ def snapshot(cpu):
 	else:
 		print "Unknown Command\n"
 
-	#r
-	# show the PIDs of the proceses in the REady Q
-	#p
-	# show the PIDs and printer information of the processes in the printer queues
-	#d
-	# above for disks
-	#c
-	# CD/RW queues
 # S m
 def snapshotMemory(cpu):
 	pass

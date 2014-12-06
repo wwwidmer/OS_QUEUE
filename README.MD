@@ -27,7 +27,6 @@ General
 ^ probably not for deadline
 
 Programming
-- Add scheduling
-	disk
-
-- cpu usage accounting X
+- Add memory management
+  - Paging
+    - Frame and Page Tables

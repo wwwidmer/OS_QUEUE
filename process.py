@@ -40,6 +40,12 @@ class pcb(object):
 	def __lt(self, memR):
 		return self.memSize < memR.memSize
 
+	def generatePageTable(self, totalMem, pageSize):
+		numPages = totalMem / pageSize
+		
+		return numPages
+
+
 # Device object. Uses python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
 # and Disks have a scheduler
@@ -188,9 +194,11 @@ class cpu(object):
 	def terminate(self):
 		old = copy.copy(self.runningPCB)
 		self.runningPCB = 0
+		self.setPCB()
+		if old == 0:
+			return 0
 		self.addMemory(old.memSize)
 		self.dispatchProcess()
-		self.setPCB()
 		return old
 
 	# PIDs  must be unique (somewhat) so I'm doing a very simple map/hash
@@ -220,7 +228,7 @@ class cpu(object):
 		# if not enough for X.size add X to pool
 
 		if int(x.memSize) > int(self.currentMemoryAvailable):
-			print "To pool"
+			print "This process has been added to the pool"
 			self.pool.append(x)
 		else:
 			self.queue.append(x)
@@ -233,14 +241,16 @@ class cpu(object):
 	# determine which process is added to ready queue when memory is freed
 	# largest that will fit
 
-	def dispatchProcess(self):
-		
-		print max(self.pool)
+	def dispatchProcess(self):		
+		self.pool.sort()
+		self.pool.reverse()
+		for x in self.pool:
+			if int(x.memSize) <= int(self.currentMemoryAvailable):
+				self.push(x)
+				print "Process "+str(x.pid)+" has been dispatched from the pool to the queue"
+				self.pool.remove(x)
+
 	
-	def generatePageTable(self):
-		numPages = self.totalMem / self.pageSize
-		
-		return numPages
 
 	def killProcess(self, pid):
 		temp = deque()
@@ -250,7 +260,7 @@ class cpu(object):
 			return 0
 		elif self.runningPCB.pid == int(pid):
 			print "PID#"+str(pid)+" killed."
-			self.terminate()
+			return self.terminate()
 		else:
 			while True:
 				try:
@@ -258,7 +268,7 @@ class cpu(object):
 					if x.pid == int(pid):
 						print "PID#"+str(pid)+" killed."
 						self.addMemory(x.memSize)
-						break;
+						return x
 					else:
 						temp.append(x)
 				except IndexError:
