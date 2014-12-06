@@ -1,0 +1,72 @@
+issues
+
+logical -> physical map
+
+Pool -> queue management
+
+S m
+
+
+RUNNING
+
+process dispatched from the job pool on a "largest that will fit" basis
+
+
+if when there is enough usable memory for the process the OS should assign it that memory and load process
+
+
+############
+"K#" 
+     finds and kills PID "#". When K# terminates a process or a "t" signals the completion, OS should free up the memory used by that process.
+
+if enough memory but not neough free memory send to job pool
+
+reaccount for killed / terminated
+
+MAP logical to PHYSICAL address
+
+
+
+
+###########
+
+"S m"
+
+   new option. should display system memory information. Frame table with a free frame list.
+
+
+
+
+SPECIFICATIONS
+
+#total size of memory
+#max size of process
+#size of a page
+
+#Page = 2^k
+#total size of memory % Page = 0
+
+=======================
+
+#"A" -> Process size in words
+#A.size > total size of memory -> reject
+#A.size > size of a page -> reject
+#A.size > remaining memory -> JOB POOL
+
+After memory is released... (Largest that will fit)
+cpu.remaining memory < GREATESTSIZEDJOBPOOLITEM.size -> dispatch from JOB POOL to READY QUEUE
+
+#[device]# -> Starting loc in memory -> logical HEX [0...f]+ 
+-> MAP TO PHYSICAL
+
+=======================
+
+# K# 
+-> kill pid # 
+-> free up memory
+
+=======================
+
+Sm -> 
+Frame Table
+Free Frame List

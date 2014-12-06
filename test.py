@@ -1,33 +1,52 @@
 import process
 
+diskCyl = {}
+diskCyl[1] = 1
 
-d = process.device("d1")
-d.cylinders = 8
+devices = {"slice":1,"totalMem":40,"maxProc":10,"pageSize":4,"p":1,"d":1,"rw":1,"diskCyl":diskCyl}
 
-p1 = process.pcb(0)
-p1.cylinder = 1
-p3 = process.pcb(2)
-p3.cylinder = 7
+c = process.cpu(devices)
+p0 = process.pcb(1,10)
+p1 = process.pcb(2,10)
+p2 = process.pcb(3,2)
+p3 = process.pcb(4,10)
+p5 = process.pcb(5,4)
+p6 = process.pcb(6,9)
+p7 = process.pcb(8,8)
+p4 = process.pcb(7,6)
 
-d.push(p1) #1
-d.schedule()
-d.push(p1) #1
-d.push(p3) #7
-d.schedule()
-d.push(p1) #1
-d.push(p3) #7
-d.schedule()
-d.push(p3) #7
-d.push(p1) #1
-d.push(p3) #7
-d.push(p3) #7
-d.push(p1) #1
-d.push(p3) #7
-d.push(p1) #1
-d.schedule()
-
-# 1 1 7 7 1 1 1 1 7 7 7 7
+def info():
+    print "total memory: " + str(c.totalMem)
+    print "page size: " + str(c.pageSize)
+    print "current memory: " + str(c.currentMemoryAvailable)
 
 
-for x in d.queue:
-	print x.cylinder
+
+c.push(p0)
+c.push(p1)
+c.push(p2)
+c.push(p3)
+c.push(p4)
+c.push(p5)
+c.push(p6)
+c.push(p7)
+info()
+
+print c.pool
+
+for x in c.queue:
+    print x.pid
+
+print "======"
+c.killProcess(4)
+
+
+for x in c.queue:
+    print x.pid
+print "======"
+
+c.killProcess(1)
+info()
+
+
+
