@@ -184,8 +184,9 @@ def kill(cpu,pid):
 		return 0
 	print "{:4s} {:10s}".format("PID","Total CPU Time")
 	print "{:4s} {:10s}".format(str(old.pid),str(old.totalTime))
-	
+	cpu.dispatchProcess()
 	cpu.updateAverageCPU(old.totalTime)
+	print "Average CPU time"
 	print cpu.avgTime
 
 # 'T'
@@ -196,7 +197,6 @@ def backtoQueue(cpu):
 		return 0
 	else:
 		currentPCB.totalTime += cpu.timeSlice
-		cpu.addMemory(currentPCB)
 		cpu.setPCB()
 		cpu.push(currentPCB)
 
@@ -267,26 +267,24 @@ def snapshotMemory(cpu):
 
 # S r
 def snapshotReadyQueue(cpu,queue):
-	print '{:4s} \n'.format('PID')
+	print '{:4s}'.format('PID')
 	if cpu.runningPCB == 0:
 		print "Nothing in CPU"
 	else:
-		print cpu.runningPCB.pid
-		print "Frames: " + str(cpu.runningPCB.table)
+		print '{:4s}'.format(str(cpu.runningPCB.pid)) + "Frames: " + str(cpu.runningPCB.table)
 	for pcb in queue:
-		print '{:4s} '.format(str(pcb.pid))
-		print "Frames: " + str(pcb.table)
+		print '{:4s} '.format(str(pcb.pid)) +"Frames: "+ str(pcb.table)
+
 
 # S everything else
 def snapshotOutput(device):
-	print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s} {:5s} {:7s}\n'.format('PID','Filename','Memstart','R/W','File','Length','Time', 'AvgBurst')
+	print '{:4s} {:10s} {:5s} {:5s} {:8s} {:7s} {:5s} {:7s} {:10s}\n'.format('PID','Filename','Mem0x','R/W','File','Length','Time', 'AvgBurst', 'Frames')
 	for d in device:
 		if d.name[0] == 'd':
 			d.schedule()
 		print '--- {:3s}\n'.format(d.name)
 		for pcb in d.queue:
-			print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s} {:5s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(hex(pcb.mem)), pcb.RW(), str(pcb.mem), str(pcb.lenw), str(pcb.totalTime), str(pcb.averageBurst))
-			print "Frames: "+ str(pcb.table)
+			print '{:4s} {:10s} {:5s} {:5s} {:8s} {:7s} {:5s} {:7s} {:10s}\n'.format(str(pcb.pid), pcb.file, str(hex(pcb.mem)), pcb.RW(), str(pcb.mem), str(pcb.lenw), str(pcb.totalTime), str(pcb.averageBurst), str(pcb.table))
 
 # Call appropriate functions, generate system, link CPU and devices, run with the one CPU.
 def init():

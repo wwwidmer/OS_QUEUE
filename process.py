@@ -39,11 +39,11 @@ class pcb(object):
 	def __str__(self):
 		return str(self.pid)
 	def __repr__(self):
-		return str(self.pid)+"-"+str(self.memSize)
+		return str(self.pid)+"-"+ str(self.tableSize())
 	def __gt__(self, memR):
-		return self.memSize > memR.memSize
+		return self.tableSize() > memR.tableSize()
 	def __lt__(self, memR):
-		return self.memSize < memR.memSize
+		return self.tableSize() < memR.tableSize()		
 	def tableSize(self):
 		return math.ceil(self.memSize / self.p)+1
 	def generateTable(self, frames):
@@ -264,6 +264,7 @@ class cpu(object):
 		return old
 	# PIDs  must be unique (somewhat) so I'm doing a very simple map/hash
 	def pidAssign(self):
+		self.qSize = self.qSize+1
 		return self.qSize
 	# sets the PCB to whatever is at the front of the queue.
 	def setPCB(self):
@@ -300,7 +301,7 @@ class cpu(object):
 		self.pool.sort()
 		self.pool.reverse()
 		for x in self.pool:
-			if len(self.frames) <= int(x.tableSize()):
+			if len(self.frames) >= int(x.tableSize()):
 				frames = self.removeMemory(x.tableSize())
 				x.generateTable(frames)
 				self.push(x)
