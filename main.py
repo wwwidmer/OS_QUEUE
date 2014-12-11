@@ -114,8 +114,7 @@ def handleInput(command,cpu):
 					return 0
 			paraMem = raw_input("Enter memory starting location(hex): ")
 			if(hexCheck(paraMem)):
-				currentPCB.setMem(paraMem)
-				# CORRESPONDING PHYSICAL ADDRESS
+				print "Physical Address: " + str(currentPCB.setMem(paraMem))
 			else:
 				print "Please use base 16 integer"
 				return 0
@@ -174,10 +173,9 @@ def handleInput(command,cpu):
 				known_commands[command](cpu)
 		except KeyError as k:
 			print "Unknown Command. Try again"
-#K#
-
+# K#, need to update for devices.
 def kill(cpu,pid):
-	old = cpu.killProcess(pid)
+	old = cpu.kill(pid)
 	if old == 0:
 		print "PID could not be found"
 		return 0
@@ -195,7 +193,7 @@ def backtoQueue(cpu):
 		return 0
 	else:
 		currentPCB.totalTime += cpu.timeSlice
-		cpu.addMemory(currentPCB.memSize)
+		cpu.addMemory(currentPCB)
 		cpu.setPCB()
 		cpu.push(currentPCB)
 
@@ -213,10 +211,13 @@ def processArrival(cpu):
 			if int(words) > cpu.totalMem or int(words) > cpu.maxProcessSize or int(words) == 0:
 				print "Please let process be smaller than the CPUs total memory and the max process size"
 				wordCheck = False
+# rethink order of below segment
+	process = pcb(pid,words,cpu.maxProcessSize,cpu.pageSize)
+	frames = cpu.removeMemory(process.tableSize())
 
-	process = pcb(pid,words)
+	process.generateTable(frames)
 	cpu.push(process)
-
+#
 # 't'
 def terminate(cpu):
 	old = cpu.terminate()
@@ -244,13 +245,13 @@ def snapshot(cpu):
 	elif sPara == 'c':
 		snapshotOutput( cpu.getDeviceType("r") )
 	elif sPara == 'm':
-		snapshotMemory()
+		snapshotMemory(cpu)
 	else:
 		print "Unknown Command\n"
 
 # S m
 def snapshotMemory(cpu):
-	pass
+	cpu.memorySnapshot()
 
 
 # S r
@@ -260,8 +261,10 @@ def snapshotReadyQueue(cpu,queue):
 		print "Nothing in CPU"
 	else:
 		print cpu.runningPCB.pid
+		print "Frames: " + str(cpu.runningPCB.table)
 	for pcb in queue:
 		print '{:4s} '.format(str(pcb.pid))
+		print "Frames: " + str(pcb.table)
 
 # S everything else
 def snapshotOutput(device):
@@ -272,6 +275,7 @@ def snapshotOutput(device):
 		print '--- {:3s}\n'.format(d.name)
 		for pcb in d.queue:
 			print '{:4s} {:15s} {:10s} {:5s} {:8s} {:7s} {:5s} {:7s}\n'.format(str(pcb.pid), pcb.file, str(hex(pcb.mem)), pcb.RW(), str(pcb.mem), str(pcb.lenw), str(pcb.totalTime), str(pcb.averageBurst))
+			print "Frames: "+ str(pcb.table)
 
 # Call appropriate functions, generate system, link CPU and devices, run with the one CPU.
 def init():

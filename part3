@@ -1,4 +1,3 @@
-issues
 
 logical -> physical map : page tables
      each process gets a page table
@@ -6,13 +5,24 @@ logical -> physical map : page tables
      logical = L
      page # = L/2^k
      offset d = L % 2^k
-     
+
+#A -> mem -> push -># create page table ?
+
+t, K -> get pid.table 
+-> # append to frame fifo
+^
+size of memory in POOLED jobs, sort descending, try to push
+
+
+device# -> # starting loc -> # currentPCB.getphysical
+
+"S" 
+    display page table for processes
 
 
 "S m"
 
    new option. should display system memory information. Frame table with a free frame list.
-
 
 
 SPECIFICATIONS
@@ -29,20 +39,11 @@ SPECIFICATIONS
 #"A" -> Process size in words
 #A.size > total size of memory -> reject
 #A.size > size of a page -> reject
-#A.size > remaining memory -> JOB POOL
 
-#After memory is released... (Largest that will fit)
-#cpu.remaining memory < GREATESTSIZEDJOBPOOLITEM.size -> dispatch from JOB POOL to READY QUEUE
+A.size > remaining memory -> JOB POOL
 
-#[device]# -> Starting loc in memory -> logical HEX [0...f]+ 
+After memory is released... (Largest that will fit)
+cpu.remaining memory < GREATESTSIZEDJOBPOOLITEM.size -> dispatch from JOB POOL to READY QUEUE
+
+[device]# -> Starting loc in memory -> logical HEX [0...f]+ 
 -> MAP TO PHYSICAL
-
-=======================
-
-# K# -> kill pid # -> free up memory
-
-=======================
-
-Sm -> 
-Frame Table
-Free Frame List

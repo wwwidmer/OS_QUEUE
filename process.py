@@ -1,26 +1,30 @@
 from collections import deque
 from random import randrange
-import re, copy, time, threading
+import re, copy, time, math
 
 
 # process object with all essential information. Setters mostly. Nothing complicated.
 class pcb(object):
 
-	def __init__(self, pid, memory):
+	def __init__(self, pid, memory, m, p):
 		self.pid = pid
-		self.memSize = memory
+		# PS
+		self.memSize = int(memory)
 		self.file = "null"
 		self.r = False
 		self.lenw = 0
+		# starting memory
 		self.mem = 0
 		self.totalTime = 0
 		self.cylinder = 1
 		self.averageBurst = 0.0
 		self.completed = 0
+		self.m = m
+		self.p = int(p)
+		self.table = []
 
 	def updateAverage(self):
 		self.averageBurst = float(self.totalTime / self.completed)
-
 	def setFile(self,file):
 		self.file = file
 	def setR(self, r):
@@ -29,6 +33,7 @@ class pcb(object):
 		self.lenw = leng
 	def setMem(self, mem):
 		self.mem = int(mem,16)
+		return self.getPhysicalPage(self.mem)
 	def RW(self):
 		return "r" if self.r else "w"
 	def __str__(self):
@@ -37,15 +42,21 @@ class pcb(object):
 		return str(self.pid)+"-"+str(self.memSize)
 	def __gt__(self, memR):
 		return self.memSize > memR.memSize
-	def __lt(self, memR):
+	def __lt__(self, memR):
 		return self.memSize < memR.memSize
-
-	def generatePageTable(self, totalMem, pageSize):
-		numPages = totalMem / pageSize
+	def tableSize(self):
+		return math.ceil(self.memSize / self.p)+1
+	def generateTable(self, frames):
+		if frames is not False:
+			for x in frames:
+				self.table.append(x)	
+	def getPhysicalPage(self,l):
+		pg = math.floor(int(l) / self.p)
+		d = int(l) % self.p
+		f = self.table[int(pg)] * self.p
+		phy = f + d
+		return hex(phy)
 		
-		return numPages
-
-
 # Device object. Uses python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
 # and Disks have a scheduler
@@ -95,15 +106,6 @@ class device(object):
 		if int(self.cur_cylinder) > int(self.cylinders):
 			self.cur_cylinder = 1
 
-
-	def cscanSchedule2(self):
-		# thread timer, awake every 4 seconds
-		# get cur_cylinder
-		# compare to everything in queue_buffer
-		# pop from qb into queue is match
-		# back to sleep after checking all qb
-		pass
-
 	# wrapper methods for the queue
 	def popFront(self):
 		return self.queue.popleft()
@@ -121,6 +123,12 @@ class device(object):
 			print "Device is empty"
 			return 0
 
+	def kill(self,pid):
+		return self.killProcess(pid)
+	def killProcess(self, pid):
+		return 0
+	
+
 	def checkCylinder(self, x):
 		if int(x) > int(self.cylinders):
 			return False
@@ -129,10 +137,10 @@ class device(object):
 
 # cpu object. Where all the fun is.
 class cpu(object):
-
 	# create the queue, set the current process to 0 (null), and configure devices attached (as parameter)
 	def __init__(self, devices):
 		self.queue = deque()
+		self.frames = deque()
 		self.pool = []
 		self.runningPCB = 0
 		self.devices = []
@@ -141,9 +149,11 @@ class cpu(object):
 		self.totalTime = 0
 		self.numComp = 0
 		self.timeSlice = int(devices['slice'])
+		# M
 		self.maxProcessSize = int(devices['maxProc'])
+		# T
 		self.totalMem = int(devices['totalMem'])
-		self.currentMemoryAvailable = int(self.totalMem)
+		# P
 		self.pageSize = int(devices['pageSize'])
 
 		for d in range(int(devices['p'])):
@@ -156,20 +166,38 @@ class cpu(object):
 		for d in range(int(devices['rw'])):
 			newDevice = device('rw'+str(d+1))
 			self.devices.append(newDevice)
+			
+		totalFrames = self.totalMem / self.pageSize
 
+		for x in range(totalFrames):
+			self.frames.append(x)
+
+	def memorySnapshot(self):
+		# {:6} {:4} {:5}
+		print "{:6} {:4}".format("Frame","PID/PG")
+		free = ""
+		print "Free Frames: "
+		for x in self.frames:
+			free += str(x)+","
+		print free
 
 	# memory management
 	def removeMemory(self,x):
-		self.currentMemoryAvailable = self.currentMemoryAvailable - int(x)
-
+		pageTable = []
+		if len(self.frames) < int(x):
+			return False
+		for j in range(int(x)):
+			pageTable.append(self.frames.popleft())
+		return pageTable
 	def addMemory(self, x):
-		self.currentMemoryAvailable = self.currentMemoryAvailable + int(x)
-
+		x.table.reverse()
+		for j in range(len(x.table)):
+			self.frames.append(x.table.pop())
+		return True
 	def updateAverageCPU(self, x):
 		self.numComp += 1
 		self.totalTime += x
 		self.avgTime = float(self.totalTime / self.numComp)
-
 	def getQueue(self):
 		return self.queue
 	def getDeviceType(self,device):
@@ -182,14 +210,12 @@ class cpu(object):
 		for d in self.devices:
 			if d.name == device :
 				return d
-
 	# checks device list for a deviceName (p1,d3,rw123132...)
 	def findDevice(self,deviceName):
 		for d in self.devices:
 			if d.name == deviceName:
 				return True
 		return False
-
 	# We've already popFront at this point, so we set what is currently running to 0
 	def terminate(self):
 		old = copy.copy(self.runningPCB)
@@ -197,17 +223,15 @@ class cpu(object):
 		self.setPCB()
 		if old == 0:
 			return 0
-		self.addMemory(old.memSize)
+		self.addMemory(old)
 		self.dispatchProcess()
 		return old
-
 	# PIDs  must be unique (somewhat) so I'm doing a very simple map/hash
 	def pidAssign(self):
 		return self.qSize
 	# sets the PCB to whatever is at the front of the queue.
 	def setPCB(self):
 		self.runningPCB = self.popFront()
-
 	def peek(self):
 		try:
 			return self.queue[0]
@@ -220,54 +244,59 @@ class cpu(object):
 		except IndexError:
 			print("Nothing in the CPU")
 			return 0
-
 	# add to back of the queue
 	def push(self,x):
 		self.qSize = self.qSize+1
-		# check memory left
+		# check memory left ie how many frames we need
 		# if not enough for X.size add X to pool
 
-		if int(x.memSize) > int(self.currentMemoryAvailable):
+		if int(x.memSize / self.pageSize) > len(self.frames):
 			print "This process has been added to the pool"
 			self.pool.append(x)
 		else:
 			self.queue.append(x)
-			self.removeMemory(x.memSize)
 			if(self.runningPCB == 0):
 				self.setPCB()
 			return self.runningPCB
-			
-		
 	# determine which process is added to ready queue when memory is freed
 	# largest that will fit
-
 	def dispatchProcess(self):		
 		self.pool.sort()
 		self.pool.reverse()
 		for x in self.pool:
-			if int(x.memSize) <= int(self.currentMemoryAvailable):
+			if int(x.memSize) <= int(25):
 				self.push(x)
 				print "Process "+str(x.pid)+" has been dispatched from the pool to the queue"
 				self.pool.remove(x)
-
-	
-
+	def kill(self, pid):
+		# check devices
+		deviceCheck = False
+		for x in self.devices:
+			deviceCheck = x.kill(pid)
+			if deviceCheck:
+				return 1
+		# if not in devices, check queue
+		if not deviceCheck:
+			return self.killProcess(pid)
+		return 0
 	def killProcess(self, pid):
 		temp = deque()
-		#pop left until found
+		# check queue, first decide if queue is empty
 		if self.runningPCB == 0:
 			print "Empty Queue"
 			return 0
+		# next check if running process is being killed (then terminate)
 		elif self.runningPCB.pid == int(pid):
 			print "PID#"+str(pid)+" killed."
 			return self.terminate()
+		#pop left until found
 		else:
 			while True:
 				try:
 					x = self.queue.popleft()
 					if x.pid == int(pid):
 						print "PID#"+str(pid)+" killed."
-						self.addMemory(x.memSize)
+						self.addMemory(x)
 						return x
 					else:
 						temp.append(x)
@@ -281,3 +310,6 @@ class cpu(object):
 					break
 		self.dispatchProcess()
 		return True
+
+
+		
