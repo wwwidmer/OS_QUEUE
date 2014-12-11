@@ -9,7 +9,7 @@ c = process.cpu(devices)
 p0 = process.pcb(1,1000, 1024, 256)
 p1 = process.pcb(2,900, 1024, 256)
 p2 = process.pcb(3,800, 1024, 256)
-p3 = process.pcb(4,600, 1024, 256)
+p3 = process.pcb(4,700, 1024, 256)
 p4 = process.pcb(8,500, 1024, 256)
 p5 = process.pcb(8,500, 1024, 256)
 
@@ -32,7 +32,7 @@ p3.generateTable(c.removeMemory(p3.tableSize()))
 c.push(p4)
 c.push(p1)
 c.push(p2)
-#c.push(p3)
+c.push(p3)
 '''
 c.push(p1)
 c.push(p2)
@@ -43,15 +43,15 @@ c.push(p5)
 info()
 
 l = 258
-
+'''
 print "table " + str(p4.table)
 print "table " + str(p1.table)
 print "table " + str(p2.table)
-
+'''
 
 print p4.getPhysicalPage(l)
 
-c.addMemory(p4)
+
 print c.frames
 
 c.memorySnapshot()

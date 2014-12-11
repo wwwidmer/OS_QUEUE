@@ -56,7 +56,11 @@ class pcb(object):
 		f = self.table[int(pg)] * self.p
 		phy = f + d
 		return hex(phy)
-		
+	def reportFrames(self):
+		frameMap = {}
+		for x in self.table:
+			frameMap[str(x)] = {self.pid:self.table.index(x)}
+		return frameMap
 # Device object. Uses python deque and can be one of three types. Type really does not matter
 # other than printers can only write.
 # and Disks have a scheduler
@@ -126,7 +130,26 @@ class device(object):
 	def kill(self,pid):
 		return self.killProcess(pid)
 	def killProcess(self, pid):
-		return 0
+		temp = deque()
+		found = 0
+		while True:
+			try:
+				x = self.queue.popleft()
+				if x.pid == int(pid):
+					print "PID#" +str(pid)+" killed."
+					found = x
+				else:
+					temp.append(x)
+			except  IndexError:
+				break
+		while True:
+			try:
+				x = temp.pop()
+				self.queue.appendleft(x)
+			except IndexError:
+				break
+	
+		return found
 	
 
 	def checkCylinder(self, x):
@@ -175,6 +198,19 @@ class cpu(object):
 	def memorySnapshot(self):
 		# {:6} {:4} {:5}
 		print "{:6} {:4}".format("Frame","PID/PG")
+		usedFrames = {}
+		for d in self.devices:
+			for pcb in d.queue:
+				pcbFrames = pcb.reportFrames()
+				usedFrames = dict(usedFrames.items()+pcbFrames.items())
+		for pcb in self.queue:
+				pcbFrames = pcb.reportFrames()
+				usedFrames = dict(usedFrames.items()+pcbFrames.items())
+		if self.runningPCB is not 0:
+			usedFrames = dict(usedFrames.items() + self.runningPCB.reportFrames().items())
+
+		for x,y in usedFrames.items():
+			print "{:6} {:4}".format(x,y)
 		free = ""
 		print "Free Frames: "
 		for x in self.frames:
@@ -250,21 +286,23 @@ class cpu(object):
 		# check memory left ie how many frames we need
 		# if not enough for X.size add X to pool
 
-		if int(x.memSize / self.pageSize) > len(self.frames):
-			print "This process has been added to the pool"
-			self.pool.append(x)
-		else:
-			self.queue.append(x)
-			if(self.runningPCB == 0):
-				self.setPCB()
-			return self.runningPCB
+#		if int(x.memSize / self.pageSize) > len(self.frames):
+#			print "This process has been added to the pool"
+#			self.pool.append(x)
+#		else:
+		self.queue.append(x)
+		if(self.runningPCB == 0):
+			self.setPCB()
+		return self.runningPCB
 	# determine which process is added to ready queue when memory is freed
 	# largest that will fit
 	def dispatchProcess(self):		
 		self.pool.sort()
 		self.pool.reverse()
 		for x in self.pool:
-			if int(x.memSize) <= int(25):
+			if len(self.frames) <= int(x.tableSize()):
+				frames = self.removeMemory(x.tableSize())
+				x.generateTable(frames)
 				self.push(x)
 				print "Process "+str(x.pid)+" has been dispatched from the pool to the queue"
 				self.pool.remove(x)
@@ -274,12 +312,14 @@ class cpu(object):
 		for x in self.devices:
 			deviceCheck = x.kill(pid)
 			if deviceCheck:
-				return 1
+				self.addMemory(deviceCheck)
+				return deviceCheck
 		# if not in devices, check queue
 		if not deviceCheck:
 			return self.killProcess(pid)
 		return 0
 	def killProcess(self, pid):
+		found = 0
 		temp = deque()
 		# check queue, first decide if queue is empty
 		if self.runningPCB == 0:
@@ -297,7 +337,7 @@ class cpu(object):
 					if x.pid == int(pid):
 						print "PID#"+str(pid)+" killed."
 						self.addMemory(x)
-						return x
+						found = x
 					else:
 						temp.append(x)
 				except IndexError:
@@ -309,7 +349,7 @@ class cpu(object):
 				except IndexError:
 					break
 		self.dispatchProcess()
-		return True
+		return found
 
 
 		

@@ -114,6 +114,9 @@ def handleInput(command,cpu):
 					return 0
 			paraMem = raw_input("Enter memory starting location(hex): ")
 			if(hexCheck(paraMem)):
+				if int(paraMem,16) > cpu.maxProcessSize:
+					print "Input larger than Logical Memory"
+					return 0
 				print "Physical Address: " + str(currentPCB.setMem(paraMem))
 			else:
 				print "Please use base 16 integer"
@@ -212,11 +215,19 @@ def processArrival(cpu):
 				print "Please let process be smaller than the CPUs total memory and the max process size"
 				wordCheck = False
 # rethink order of below segment
-	process = pcb(pid,words,cpu.maxProcessSize,cpu.pageSize)
-	frames = cpu.removeMemory(process.tableSize())
 
-	process.generateTable(frames)
-	cpu.push(process)
+	process = pcb(pid,words,cpu.maxProcessSize,cpu.pageSize)
+	# check if we have enough pages
+	
+	# if we do we can get frames and generate table
+	# then push
+	if process.tableSize() > len(cpu.frames):
+		print "This process has been added to the pool"
+		cpu.pool.append(process)
+	else:
+		frames = cpu.removeMemory(process.tableSize())
+		process.generateTable(frames)
+		cpu.push(process)
 #
 # 't'
 def terminate(cpu):
