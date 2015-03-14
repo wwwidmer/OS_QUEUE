@@ -3,7 +3,7 @@ from random import randrange
 import re, copy, time, math
 
 
-# process object with all essential information. Setters mostly. Nothing complicated.
+# Process object with all essential information. Setters mostly. Nothing complicated.
 class pcb(object):
 
 	def __init__(self, pid, memory, m, p):
@@ -22,7 +22,7 @@ class pcb(object):
 		self.m = m
 		self.p = int(p)
 		self.table = []
-
+        # Setters (Unneeded)
 	def updateAverage(self):
 		self.averageBurst = float(self.totalTime / self.completed)
 	def setFile(self,file):
@@ -44,6 +44,7 @@ class pcb(object):
 		return self.tableSize() > memR.tableSize()
 	def __lt__(self, memR):
 		return self.tableSize() < memR.tableSize()		
+        # For paging
 	def tableSize(self):
 		return math.ceil(self.memSize / self.p)+1
 	def generateTable(self, frames):
@@ -62,12 +63,10 @@ class pcb(object):
 			frameMap[str(x)] = {self.pid:self.table.index(x)}
 		return frameMap
 # Device object. Uses python deque and can be one of three types. Type really does not matter
-# other than printers can only write.
-# and Disks have a scheduler
+# other than printers can only write and Disks have a scheduler.
 class device(object):
-	# printer, disk, CD/RW
-
 	def __init__(self, name):
+                # P.. D.. RW..
 		self.name = name
 		self.queue = deque()
 		self.queue_buffer = deque()
@@ -77,16 +76,13 @@ class device(object):
 		self.cylinders = 1
 		self.cur_cylinder = 1
 
-
 	def updateTotal(self,x):
 		self.completed += 1
 		self.totalTime += x
 
-
-	# DISK SCHEDULER
+	# DISK SCHEDULER. 
 	def schedule(self):
 		dequeuer = []
-
 		try:
 			while self.queue_buffer:
 				dequeuer.append(self.queue_buffer.popleft())
@@ -110,7 +106,7 @@ class device(object):
 		if int(self.cur_cylinder) > int(self.cylinders):
 			self.cur_cylinder = 1
 
-	# wrapper methods for the queue
+	# Wrapper methods for the queue
 	def popFront(self):
 		return self.queue.popleft()
 	def push(self,x):
@@ -119,7 +115,7 @@ class device(object):
 		else:
 			return self.queue.append(x)
 
-	# signals the completion of the task in this devices queue
+	# Signals the completion of the task in this devices queue
 	def terminate(self):
 		try:
 			return self.queue.popleft()
@@ -129,6 +125,7 @@ class device(object):
 
 	def kill(self,pid):
 		return self.killProcess(pid)
+        # Search for Process PID and kill it.
 	def killProcess(self, pid):
 		temp = deque()
 		found = 0
@@ -151,14 +148,14 @@ class device(object):
 	
 		return found
 	
-
+        # Check that cylinder x exists.
 	def checkCylinder(self, x):
 		if int(x) > int(self.cylinders):
 			return False
 		else:
 			return True
 
-# cpu object. Where all the fun is.
+# CPU object. Where all the fun is.
 class cpu(object):
 	# create the queue, set the current process to 0 (null), and configure devices attached (as parameter)
 	def __init__(self, devices):
@@ -172,13 +169,10 @@ class cpu(object):
 		self.totalTime = 0
 		self.numComp = 0
 		self.timeSlice = int(devices['slice'])
-		# M
 		self.maxProcessSize = int(devices['maxProc'])
-		# T
 		self.totalMem = int(devices['totalMem'])
-		# P
 		self.pageSize = int(devices['pageSize'])
-
+                
 		for d in range(int(devices['p'])):
 			newDevice = device('p'+str(d+1))
 			self.devices.append(newDevice)
@@ -284,13 +278,6 @@ class cpu(object):
 	# add to back of the queue
 	def push(self,x):
 		self.qSize = self.qSize+1
-		# check memory left ie how many frames we need
-		# if not enough for X.size add X to pool
-
-#		if int(x.memSize / self.pageSize) > len(self.frames):
-#			print "This process has been added to the pool"
-#			self.pool.append(x)
-#		else:
 		self.queue.append(x)
 		if(self.runningPCB == 0):
 			self.setPCB()

@@ -3,7 +3,7 @@ import re, copy
 
 
 # GENERATE SYSTEM PARAMETERS FROM INPUT
-# TRAPS ALL INCORRECT TYPES
+# Trap all incorrect types (String instead of numbers)
 def sysgen():
 	print("SYSGEN")
 	deviceGen = False
@@ -15,22 +15,18 @@ def sysgen():
 		totalMem = raw_input("What is the total size of memory?(All memory sizes are in words): ")
 		maxProc = raw_input("What is the maximum size of a process?: ")
 		pageSize = raw_input("What is the sixe of a page?: ")		
-				
-		deviceGen = genIntCheck([numprint, numdisk, numrw, tSlice,totalMem,maxProc,pageSize])
-
+                # Validate all input as integers.
+                deviceGen = genIntCheck([numprint, numdisk, numrw, tSlice,totalMem,maxProc,pageSize])
+                # Validate Page size to be a power of 2
 		if deviceGen:
 			if not power2(int(pageSize)) or int(totalMem) % int(pageSize) != 0:
 				print "Page size must be a power of 2 and must evenly divide Total Memory"			
 				deviceGen = False
-		
-		# check mem,proc,pagesize for correct sizes
-		# page size is a power of 2
-		# page should divide all memory evenly
-				
+                # If we weren't given Integers
 		if(not deviceGen):
 			print "Please reenter all values as base 10 Integers"
-		# determine cylinder length for each disk
-	diskCyl = {}
+        # determine cylinder length for each disk
+        diskCyl = {}
 	generatingDisk = True
 	while generatingDisk:
 		for i in range(int(numdisk)):
@@ -42,14 +38,15 @@ def sysgen():
 			generatingDisk = True
 			print("Please reenter all values as base 10 Integers")
 
-
+        # Map the user input and return.
 	return {"p":numprint,"d":numdisk,"rw":numrw,"slice":tSlice,"diskCyl":diskCyl,"totalMem":totalMem,"maxProc":maxProc,"pageSize":pageSize}
 
-# check for power of 2 oneliner
+# Check for power of 2 oneliner
 def power2(x):
 	return (x & (x-1) == 0) and (x != 0)
 
 
+# Check for hex
 def hexCheck(x):
 	try:
 		int(x,16)
@@ -59,7 +56,7 @@ def hexCheck(x):
 	except ValueError:
 		return False
 
-# a type checker for sysgen
+# Check all members of [a] as integer. Useful for sysgen.
 def genIntCheck(a):
 		try:
 			for i in a:
@@ -71,7 +68,7 @@ def genIntCheck(a):
 		return True
 
 
-# a loop to prompt the user for the next command.
+# An endless loop to prompt the user for the next command.
 def running(cpu):
 	running = True
 	print("Running")
@@ -79,31 +76,35 @@ def running(cpu):
 		command = raw_input("Enter a command: ")
 		handleInput(command,cpu)
 
-# check for regular expression of commands that can be variable (p1, w1, etc)
-# or commands mapped to functions that are essentially static (t, A, S)
+# Check for regular expression of commands that can be variable (p1, w1, etc)
+# Or commands mapped to functions that are essentially static (t, A, S)
 def handleInput(command,cpu):
-	known_commands = {"A":processArrival, "S":snapshot, "t":terminate, "T":backtoQueue}
+        # Map of known commands vs regex of other potential commands.
+        known_commands = {"A":processArrival, "S":snapshot, "t":terminate, "T":backtoQueue}
 	regCommands = re.match(r'^(?P<device>p|d|rw)(?P<number>[0-9]+)$', command)
 	termCommands = re.match(r'^(?P<device>P|D|RW)(?P<number>[0-9]+)$', command)
 	killCommand = re.match(r'^K(?P<number>[0-9]+)$',command)
+        # If we have a regular command
 	if(regCommands):
 		regCommands.groupdict()
 		currentPCB = copy.copy(cpu.runningPCB)
-		# check we have a running process
+		# Check we have a running process
 		try:
 			currentPCB.pid
 		except AttributeError:
 			print "No process in CPU"
 			return 0
-		# check if device exists
+		# Check if device exists
 		if(not cpu.findDevice(command.lower())):
 			print "Device not found"
 			return 0
 		else:
-			paraFile = raw_input("Enter filename: ")
+                        # Get all required parameters for the current pcb.
+                        paraFile = raw_input("Enter filename: ")
 			currentPCB.setFile(paraFile)
 			setRead = 'w'
-			if not command.lower()[0] == 'p':
+                        # Printers can only write.
+                        if not command.lower()[0] == 'p':
 				setRead = raw_input("Read or Write: ")
 				if setRead == 'r':
 					currentPCB.setR == True
@@ -121,6 +122,7 @@ def handleInput(command,cpu):
 			else:
 				print "Please use base 16 integer"
 				return 0
+                        # If we're writing we need a memory length.
 			if(setRead == 'w'):
 				para2 = raw_input("Memory length(int): ")
 				if genIntCheck([para2]):
@@ -128,6 +130,7 @@ def handleInput(command,cpu):
 				else:
 					print "Incorrect, please use base 10 integer"
 					return  0
+                        # If we're using a disk define which cylinder used.
 			if(command.lower()[0] == 'd'):
 				cylinderAccess = raw_input("Which cylinder?: ")
 				try:
@@ -140,7 +143,7 @@ def handleInput(command,cpu):
 				except ValueError:
 					print "Please enter an integer."
 					return 0
-			# prompt Timer Here
+			# Prompt Timer Here. Every process in the ready queue must be timed.
 			timerInt = False
 			timerPrompt = 0
 			while not timerInt:
@@ -148,13 +151,15 @@ def handleInput(command,cpu):
 				timerInt = genIntCheck([timerPrompt])
 				if not timerInt:
 					print "Incorrect, please use base 10 integer"
+                                # At this point we can just call int() because this part of the code is not reached
+                                # Because incorrect input is trapped.
 				elif int(timerPrompt) > cpu.timeSlice:
 					print "Timer is larger than a time slice, try again"
 					timerInt = False
 				elif int(timerPrompt) < 0:
 					print "Timer should be non-negative base 10 integer"
 					timerInt = False
-
+                        # Update averages, push PCB to correct device, determine new head of the queue.
 			currentPCB.totalTime += int(timerPrompt)
 			currentPCB.completed += 1
 			currentPCB.updateAverage()
@@ -176,7 +181,7 @@ def handleInput(command,cpu):
 				known_commands[command](cpu)
 		except KeyError as k:
 			print "Unknown Command. Try again"
-# K#, need to update for devices.
+# K#. End a process. 
 def kill(cpu,pid):
 	old = cpu.kill(pid)
 	if old == 0:
@@ -189,7 +194,7 @@ def kill(cpu,pid):
 	print "Average CPU time"
 	print cpu.avgTime
 
-# 'T'
+# 'T', Pop and push a process back onto the ready queue. Tau = a whole time slice.
 def backtoQueue(cpu):
 	currentPCB = copy.copy(cpu.runningPCB)
 	if currentPCB == 0:
@@ -200,7 +205,7 @@ def backtoQueue(cpu):
 		cpu.setPCB()
 		cpu.push(currentPCB)
 
-# 'A'
+# 'A', a new Process
 def processArrival(cpu):
 	pid = cpu.pidAssign()
 	wordCheck = False
@@ -214,13 +219,11 @@ def processArrival(cpu):
 			if int(words) > cpu.totalMem or int(words) > cpu.maxProcessSize or int(words) == 0:
 				print "Please let process be smaller than the CPUs total memory and the max process size"
 				wordCheck = False
-# rethink order of below segment
 
 	process = pcb(pid,words,cpu.maxProcessSize,cpu.pageSize)
-	# check if we have enough pages
-	
-	# if we do we can get frames and generate table
-	# then push
+	# Check if we have enough pages. If not add to job pool.
+	# If we do we can get frames and generate table
+	# Then push into the cpu
 	if process.tableSize() > len(cpu.frames):
 		print "This process has been added to the pool"
 		cpu.pool.append(process)
@@ -228,8 +231,8 @@ def processArrival(cpu):
 		frames = cpu.removeMemory(process.tableSize())
 		process.generateTable(frames)
 		cpu.push(process)
-#
-# 't'
+
+# 't', kills the current process.
 def terminate(cpu):
 	old = cpu.terminate()
 	if old == 0:
@@ -241,7 +244,7 @@ def terminate(cpu):
 	cpu.updateAverageCPU(old.totalTime)
 	print cpu.avgTime
 
-# 'S'
+# 'S' - Entire section is Output from the S command.
 def snapshot(cpu):
 	sPara = raw_input("Enter r, p, d, c, or m: ")
 	print "Average CPU time"
